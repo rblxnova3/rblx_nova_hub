@@ -1,0 +1,505 @@
+-- NOVA_HUB | NO FLY EDITION + DISCORD FIX
+-- LocalScript -> StarterPlayer > StarterPlayerScripts
+-- For your own Roblox Studio experience
+
+local Players = game:GetService("Players")
+local UIS = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+local GuiService = game:GetService("GuiService")
+
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+local RED = Color3.fromRGB(255, 35, 45)
+local DARK = Color3.fromRGB(18, 18, 24)
+local WHITE = Color3.fromRGB(255, 255, 255)
+local BUTTON_BG = Color3.fromRGB(42, 42, 52)
+local DISCORD_LINK = "https://discord.gg/Sb8qYPrD8m"
+
+local oldGui = playerGui:FindFirstChild("NOVA_HUB_FIXED")
+if oldGui then oldGui:Destroy() end
+
+local gui = Instance.new("ScreenGui")
+gui.Name = "NOVA_HUB_FIXED"
+gui.ResetOnSpawn = false
+gui.IgnoreGuiInset = true
+gui.DisplayOrder = 100
+gui.Parent = playerGui
+
+local connections = {}
+
+local function track(connection)
+    table.insert(connections, connection)
+    return connection
+end
+
+local function new(className, props, parent)
+    local obj = Instance.new(className)
+    for key, value in pairs(props) do
+        obj[key] = value
+    end
+    obj.Parent = parent
+    return obj
+end
+
+local function rounded(obj, radius)
+    new("UICorner", {
+        CornerRadius = UDim.new(0, radius)
+    }, obj)
+end
+
+local panel = new("Frame", {
+    Name = "Panel",
+    AnchorPoint = Vector2.new(0.5, 0.5),
+    Position = UDim2.fromScale(0.5, 0.5),
+    Size = UDim2.new(0, 290, 0, 320),
+    BackgroundColor3 = DARK,
+    BorderSizePixel = 0,
+    ClipsDescendants = true
+}, gui)
+rounded(panel, 14)
+
+new("UIStroke", {
+    Color = RED,
+    Thickness = 2
+}, panel)
+
+local header = new("Frame", {
+    Size = UDim2.new(1, 0, 0, 44),
+    BackgroundColor3 = Color3.fromRGB(8, 8, 12),
+    BorderSizePixel = 0
+}, panel)
+
+local title = new("TextLabel", {
+    Position = UDim2.new(0, 12, 0, 0),
+    Size = UDim2.new(1, -100, 1, 0),
+    BackgroundTransparency = 1,
+    Text = "NOVA_HUB",
+    TextColor3 = RED,
+    Font = Enum.Font.GothamBlack,
+    TextSize = 20,
+    TextXAlignment = Enum.TextXAlignment.Left
+}, header)
+
+local minimize = new("TextButton", {
+    Position = UDim2.new(1, -65, 0, 7),
+    Size = UDim2.new(0, 26, 0, 29),
+    Text = "—",
+    TextColor3 = WHITE,
+    BackgroundColor3 = Color3.fromRGB(60, 60, 70),
+    Font = Enum.Font.GothamBold,
+    TextSize = 16
+}, header)
+rounded(minimize, 6)
+
+local close = new("TextButton", {
+    Position = UDim2.new(1, -34, 0, 7),
+    Size = UDim2.new(0, 26, 0, 29),
+    Text = "X",
+    TextColor3 = WHITE,
+    BackgroundColor3 = RED,
+    Font = Enum.Font.GothamBold,
+    TextSize = 15
+}, header)
+rounded(close, 6)
+
+local open = new("TextButton", {
+    AnchorPoint = Vector2.new(1, 0.5),
+    Position = UDim2.new(1, -10, 0.5, 0),
+    Size = UDim2.new(0, 76, 0, 44),
+    Text = "OPEN",
+    TextColor3 = WHITE,
+    BackgroundColor3 = DARK,
+    Font = Enum.Font.GothamBlack,
+    TextSize = 15,
+    Visible = false
+}, gui)
+rounded(open, 10)
+new("UIStroke", {Color = RED, Thickness = 2}, open)
+
+local function button(text, y, height)
+    local b = new("TextButton", {
+        Position = UDim2.new(0, 12, 0, y),
+        Size = UDim2.new(1, -24, 0, height or 34),
+        BackgroundColor3 = BUTTON_BG,
+        Text = text,
+        TextColor3 = WHITE,
+        Font = Enum.Font.GothamBold,
+        TextSize = 13
+    }, panel)
+    rounded(b, 8)
+    return b
+end
+
+local jumpButton = button("Infinite Jump: OFF", 52)
+local clipButton = button("No Clip: OFF", 91)
+local highlightButton = button("Player Highlight: OFF", 130)
+local runButton = button("Run Speed: OFF", 169)
+
+local runLabel = new("TextLabel", {
+    Position = UDim2.new(0, 12, 0, 209),
+    Size = UDim2.new(1, -24, 0, 22),
+    BackgroundTransparency = 1,
+    Text = "Run Speed: 32",
+    TextColor3 = WHITE,
+    Font = Enum.Font.GothamBold,
+    TextSize = 13,
+    TextXAlignment = Enum.TextXAlignment.Left
+}, panel)
+
+local runSlider = new("TextButton", {
+    Position = UDim2.new(0, 12, 0, 235),
+    Size = UDim2.new(1, -24, 0, 22),
+    BackgroundColor3 = Color3.fromRGB(60, 60, 70),
+    Text = "Speed: 32 (16-100)",
+    TextColor3 = WHITE,
+    Font = Enum.Font.Gotham,
+    TextSize = 11,
+    AutoButtonColor = false
+}, panel)
+rounded(runSlider, 6)
+
+local discordButton = button("DISCORD", 267)
+discordButton.BackgroundColor3 = RED
+
+-- Rainbow title
+local hue = 0
+track(RunService.RenderStepped:Connect(function(dt)
+    if not gui.Parent then return end
+    hue = (hue + dt * 0.35) % 1
+    title.TextColor3 = Color3.fromHSV(hue, 1, 1)
+end))
+
+-- Drag GUI
+local dragging = false
+local dragInput, dragStart, startPos
+
+track(header.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+        or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = panel.Position
+        dragInput = input
+    end
+end))
+
+track(UIS.InputChanged:Connect(function(input)
+    if dragging and (
+        input.UserInputType == Enum.UserInputType.MouseMovement
+        or input.UserInputType == Enum.UserInputType.Touch
+    ) then
+        local delta = input.Position - dragStart
+        panel.Position = UDim2.new(
+            startPos.X.Scale, startPos.X.Offset + delta.X,
+            startPos.Y.Scale, startPos.Y.Offset + delta.Y
+        )
+    end
+end))
+
+track(UIS.InputEnded:Connect(function(input)
+    if input == dragInput
+        or input.UserInputType == Enum.UserInputType.MouseButton1
+        or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = false
+    end
+end))
+
+-- Minimize / Open
+local minimized = false
+local normalPosition = panel.Position
+local transitionId = 0
+
+track(minimize.Activated:Connect(function()
+    if minimized then return end
+    minimized = true
+    transitionId += 1
+    normalPosition = panel.Position
+    open.Visible = true
+
+    TweenService:Create(panel, TweenInfo.new(0.35), {
+        Position = UDim2.new(
+            1, 350, normalPosition.Y.Scale, normalPosition.Y.Offset
+        )
+    }):Play()
+end))
+
+track(open.Activated:Connect(function()
+    if not minimized then return end
+    minimized = false
+    transitionId += 1
+    local id = transitionId
+
+    TweenService:Create(panel, TweenInfo.new(0.35), {
+        Position = normalPosition
+    }):Play()
+
+    task.delay(0.4, function()
+        if gui.Parent and not minimized and transitionId == id then
+            open.Visible = false
+        end
+    end)
+end))
+
+-- Infinite Jump
+local infiniteJump = false
+
+track(jumpButton.Activated:Connect(function()
+    infiniteJump = not infiniteJump
+    jumpButton.Text = "Infinite Jump: " .. (infiniteJump and "ON" or "OFF")
+    jumpButton.BackgroundColor3 = infiniteJump and RED or BUTTON_BG
+end))
+
+track(UIS.JumpRequest:Connect(function()
+    if not infiniteJump then return end
+    local character = player.Character
+    local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+
+    if humanoid and humanoid.Health > 0 then
+        humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+    end
+end))
+
+-- No Clip
+local noClip = false
+local savedCollision = {}
+
+local function restoreCollision()
+    for part, oldValue in pairs(savedCollision) do
+        if part and part.Parent then
+            part.CanCollide = oldValue
+        end
+    end
+    table.clear(savedCollision)
+end
+
+track(clipButton.Activated:Connect(function()
+    noClip = not noClip
+    clipButton.Text = "No Clip: " .. (noClip and "ON" or "OFF")
+    clipButton.BackgroundColor3 = noClip and RED or BUTTON_BG
+    if not noClip then restoreCollision() end
+end))
+
+track(RunService.Stepped:Connect(function()
+    if not noClip then return end
+    local character = player.Character
+    if not character then return end
+
+    for _, part in ipairs(character:GetDescendants()) do
+        if part:IsA("BasePart") then
+            if savedCollision[part] == nil then
+                savedCollision[part] = part.CanCollide
+            end
+            part.CanCollide = false
+        end
+    end
+end))
+
+-- Player Highlight
+local highlighting = false
+local highlights = {}
+local highlightConnections = {}
+
+local function clearHighlights()
+    for _, h in pairs(highlights) do
+        if h then h:Destroy() end
+    end
+    table.clear(highlights)
+end
+
+local function updateHighlights()
+    clearHighlights()
+    if not highlighting then return end
+
+    for _, target in ipairs(Players:GetPlayers()) do
+        if target ~= player and target.Character then
+            local h = Instance.new("Highlight")
+            h.Name = "NOVA_Highlight"
+            h.Adornee = target.Character
+            h.FillColor = RED
+            h.OutlineColor = WHITE
+            h.FillTransparency = 0.35
+            h.OutlineTransparency = 0
+            h.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+            h.Parent = target.Character
+            highlights[target] = h
+        end
+    end
+end
+
+track(highlightButton.Activated:Connect(function()
+    highlighting = not highlighting
+    highlightButton.Text = "Player Highlight: " ..
+        (highlighting and "ON" or "OFF")
+    highlightButton.BackgroundColor3 = highlighting and RED or BUTTON_BG
+    updateHighlights()
+end))
+
+track(Players.PlayerAdded:Connect(function(target)
+    local conn = target.CharacterAdded:Connect(function()
+        task.wait(0.5)
+        if highlighting then updateHighlights() end
+    end)
+    table.insert(highlightConnections, conn)
+end))
+
+track(Players.PlayerRemoving:Connect(function(target)
+    if highlights[target] then
+        highlights[target]:Destroy()
+        highlights[target] = nil
+    end
+end))
+
+-- Run Speed
+local running = false
+local runSpeed = 32
+local baseWalkSpeed = 16
+
+local function getHumanoid()
+    local character = player.Character
+    return character and character:FindFirstChildOfClass("Humanoid")
+end
+
+local function setRunning(enabled)
+    local humanoid = getHumanoid()
+    if not humanoid then return end
+
+    if enabled then
+        baseWalkSpeed = humanoid.WalkSpeed
+        running = true
+        humanoid.WalkSpeed = runSpeed
+    else
+        running = false
+        humanoid.WalkSpeed = baseWalkSpeed
+    end
+
+    runButton.Text = running and "Run Speed: ON" or "Run Speed: OFF"
+    runButton.BackgroundColor3 = running and RED or BUTTON_BG
+end
+
+track(runButton.Activated:Connect(function()
+    setRunning(not running)
+end))
+
+local function setRunSpeedFromX(x)
+    local width = runSlider.AbsoluteSize.X
+    if width <= 0 then return end
+
+    local alpha = math.clamp(
+        (x - runSlider.AbsolutePosition.X) / width, 0, 1
+    )
+
+    runSpeed = math.floor(16 + alpha * 84 + 0.5)
+    runLabel.Text = "Run Speed: " .. runSpeed
+    runSlider.Text = "Speed: " .. runSpeed .. " (16-100)"
+
+    if running then
+        local humanoid = getHumanoid()
+        if humanoid then humanoid.WalkSpeed = runSpeed end
+    end
+end
+
+local sliderDragging = false
+
+track(runSlider.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+        or input.UserInputType == Enum.UserInputType.Touch then
+        sliderDragging = true
+        setRunSpeedFromX(input.Position.X)
+    end
+end))
+
+track(UIS.InputChanged:Connect(function(input)
+    if sliderDragging and (
+        input.UserInputType == Enum.UserInputType.MouseMovement
+        or input.UserInputType == Enum.UserInputType.Touch
+    ) then
+        setRunSpeedFromX(input.Position.X)
+    end
+end))
+
+track(UIS.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+        or input.UserInputType == Enum.UserInputType.Touch then
+        sliderDragging = false
+    end
+end))
+
+-- Discord Button: clipboard where supported, browser fallback
+track(discordButton.Activated:Connect(function()
+    local copied = false
+
+    -- setclipboard is not available in standard Roblox LocalScripts.
+    local clipboardFunction
+    local ok = pcall(function()
+        if typeof(setclipboard) == "function" then
+            clipboardFunction = setclipboard
+        end
+    end)
+
+    if ok and clipboardFunction then
+        copied = pcall(clipboardFunction, DISCORD_LINK)
+    end
+
+    if copied then
+        discordButton.Text = "LINK COPIED!"
+    else
+        discordButton.Text = "OPENING LINK..."
+        pcall(function()
+            GuiService:OpenBrowserWindow(DISCORD_LINK)
+        end)
+    end
+
+    task.delay(3, function()
+        if discordButton.Parent then
+            discordButton.Text = "DISCORD"
+        end
+    end)
+end))
+
+-- Respawn
+track(player.CharacterAdded:Connect(function(character)
+    task.wait(0.5)
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+
+    if humanoid then
+        baseWalkSpeed = humanoid.WalkSpeed
+        if running then
+            humanoid.WalkSpeed = runSpeed
+        end
+    end
+
+    if noClip then restoreCollision() end
+    if highlighting then updateHighlights() end
+end))
+
+-- Close and cleanup
+track(close.Activated:Connect(function()
+    noClip = false
+    restoreCollision()
+    clearHighlights()
+
+    local humanoid = getHumanoid()
+    if humanoid then
+        humanoid.WalkSpeed = baseWalkSpeed
+    end
+
+    running = false
+    highlighting = false
+    infiniteJump = false
+
+    for _, connection in ipairs(connections) do
+        if connection.Connected then
+            connection:Disconnect()
+        end
+    end
+
+    for _, connection in ipairs(highlightConnections) do
+        connection:Disconnect()
+    end
+
+    gui:Destroy()
+end))
+
+print("NOVA_HUB No Fly Edition started!")
